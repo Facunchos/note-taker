@@ -1,7 +1,6 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from models import db, User
-from app import bcrypt
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
@@ -37,7 +36,7 @@ def signup():
                 flash(e, "danger")
             return render_template("auth/signup.html", username=username, email=email)
 
-        pw_hash = bcrypt.generate_password_hash(password).decode("utf-8")
+        pw_hash = current_app.extensions['bcrypt'].generate_password_hash(password).decode("utf-8")
         user = User(username=username, email=email, password_hash=pw_hash)
         db.session.add(user)
         db.session.commit()
@@ -59,7 +58,7 @@ def login():
         password = request.form.get("password", "")
 
         user = User.query.filter_by(username=username).first()
-        if user and bcrypt.check_password_hash(user.password_hash, password):
+        if user and current_app.extensions['bcrypt'].check_password_hash(user.password_hash, password):
             login_user(user)
             flash("Welcome back, adventurer!", "success")
             next_page = request.args.get("next")

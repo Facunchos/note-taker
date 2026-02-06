@@ -1,85 +1,151 @@
-# ⚔️ Quest Log — DnD Campaign Note Taker
+# 🎲 Quest Log — DnD Campaign Note Taker
 
-A collaborative note-taking web application designed for Dungeon Masters and players to manage campaign notes in real-time. Built with Flask and ready for Railway deployment.
+Un sistema web colaborativo para que Dungeon Masters y jugadores gestionen notas de campañas de D&D en tiempo real. Construido con Flask y desplegado en Railway.
 
 ![Python](https://img.shields.io/badge/python-3.12+-blue.svg)
 ![Flask](https://img.shields.io/badge/flask-3.1.0-green.svg)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Railway](https://img.shields.io/badge/deployment-railway-purple.svg)
+![Status](https://img.shields.io/badge/status-production-green.svg)
 
-## ✨ Features
+## 🎯 Funcionalidades Principales
 
-### 🧙‍♂️ User Management
-- **User Registration & Authentication** — Secure signup/login with password hashing
-- **Session Management** — Persistent sessions with Flask-Login
+### 🔐 Sistema de Autenticación
+- **Registro e Inicio de Sesión** — Autenticación segura con hashing de contraseñas
+- **Gestión de Sesiones** — Sesiones persistentes con Flask-Login
+- **Control de Acceso** — Verificación de permisos en todas las operaciones
 
-### 🏰 Game Tables
-- **Create Campaign Tables** — Each table gets a unique 6-character hash code
-- **Join with Hash Code** — Players can join tables using the secret code
-- **Member Management** — Table owners can kick players and control note access
-- **Voluntary Leave** — Players can leave tables at any time
+### 🏰 Gestión de Mesas de Juego
+- **Crear Campañas** — Cada mesa obtiene un código hash único de 6 caracteres
+- **Unirse con Código** — Los jugadores pueden unirse usando el código secreto
+- **Roles Diferenciados** — Dungeon Master (DM) con permisos especiales vs Jugadores
+- **Gestión de Miembros** — Invitar/expulsar jugadores y controlar accesos
 
-### 📝 Collaborative Notes
-- **Rich Markdown Support** — Full markdown editor with live preview
-- **Custom Styling** — Change background color, text color, and font size per note
-- **Real-time Collaboration** — All table members can create, edit, and delete notes
-- **Permission Control** — Owners can grant/revoke note access for individual members
+### 📝 Sistema Avanzado de Notas
+- **Editor Markdown Rico** — Editor completo con vista previa en tiempo real
+- **Personalización Visual** — Colores de fondo, texto y tamaño de fuente por nota
+- **Campos Múltiples** — Título, descripción y contenido principal separados
+- **Duplicación Inteligente** — Clonado rápido de notas con títulos personalizables
+- **Acciones Rápidas** — Interfaz intuitiva con overlays hover para eficiencia
 
-### 🚀 Deployment Ready
-- **Railway Compatible** — Auto-deploys from GitHub with PostgreSQL
-- **Environment Configuration** — Easy setup with environment variables
-- **Database Migrations** — Automated schema management with Flask-Migrate
+### ⚡ **Sistema de Permisos Granulares** (Funcionalidad Principal)
+- **Permisos por Nota** — Control individual de acceso ver/editar para cada nota
+- **Jerarquía de Acceso** — Autor > DM > Permisos Específicos > Configuración de Mesa
+- **Gestión Visual** — Interfaz clara para asignar permisos por usuario
+- **Filtrado Inteligente** — Los usuarios solo ven las notas que tienen permitidas
+- **Control Total del DM** — Los DMs pueden gestionar todos los accesos en sus mesas
 
-## 🛠️ Tech Stack
+### 🚀 Despliegue en Producción
+- **Railway Ready** — Auto-despliegue desde GitHub con PostgreSQL
+- **Configuración por Variables** — Setup fácil con variables de entorno
+- **Migraciones Automáticas** — Gestión automatizada del esquema con Flask-Migrate
+- **Estado: PRODUCCIÓN ESTABLE** — Sistema completamente funcional y desplegado
 
-- **Backend**: Flask, SQLAlchemy, Flask-Migrate
-- **Authentication**: Flask-Login, Flask-Bcrypt
-- **Frontend**: Jinja2 templates, Custom CSS
-- **Database**: SQLite (dev) / PostgreSQL (production)
-- **Deployment**: Gunicorn + Railway
+## 🏗️ Stack Tecnológico
 
-## 🏃‍♂️ Quick Start
+- **Backend**: Flask 3.1.0, SQLAlchemy, Flask-Migrate
+- **Autenticación**: Flask-Login, Flask-Bcrypt
+- **Frontend**: Jinja2 templates, CSS personalizado (tema oscuro)
+- **Base de Datos**: SQLite (desarrollo) / PostgreSQL (producción)
+- **Despliegue**: Gunicorn + Railway
 
-### Prerequisites
+## 🔧 Configuración de Desarrollo
+
+### Prerrequisitos
 - Python 3.12+
 - Git
+- PostgreSQL (opcional para desarrollo)
 
-### Local Development
+### Instalación Local
 
-1. **Clone the repository**
+1. **Clonar el repositorio**
    ```bash
    git clone https://github.com/Facunchos/note-taker.git
    cd note-taker
+   
+   # ⚠️ IMPORTANTE: Siempre trabajar en rama dev
+   git checkout dev
    ```
 
-2. **Create virtual environment**
+2. **Crear entorno virtual**
    ```bash
    python -m venv .venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   source .venv/bin/activate  # Linux/Mac
+   # En Windows: .venv\Scripts\activate
    ```
 
-3. **Install dependencies**
+3. **Instalar dependencias**
    ```bash
+   # ⚠️ VERIFICAR requirements.txt antes de instalar
+   cat requirements.txt
    pip install -r requirements.txt
    ```
 
-4. **Set up database**
+4. **Configurar base de datos**
    ```bash
    flask db upgrade
    ```
 
-5. **Run the application**
+5. **Ejecutar aplicación**
    ```bash
-   flask run --debug
+   flask run
+   # App disponible en: http://localhost:5000
    ```
 
-6. **Open in browser**
-   ```
-   http://127.0.0.1:5000
-   ```
+### Variables de Entorno
 
-## 🚂 Railway Deployment
+Para desarrollo local:
+```bash
+export SECRET_KEY="tu-clave-secreta-super-segura"
+```
 
-### One-Click Deploy
+Para producción (Railway):
+```bash
+SECRET_KEY=tu-clave-secreta
+DATABASE_URL=postgresql://usuario:password@host:puerto/database
+```
+
+## 🎮 Cómo Usar el Sistema
+
+### Para Dungeon Masters
+1. **Crear Mesa** — Registrarse y crear una nueva mesa de campaña
+2. **Compartir Código** — Enviar el código hash de 6 caracteres a los jugadores  
+3. **Gestionar Notas** — Crear notas con información de campaña
+4. **Configurar Permisos** — Asignar accesos específicos por nota y jugador
+5. **Duplicar Contenido** — Clonar notas para diferentes sesiones/escenarios
+
+### Para Jugadores
+1. **Unirse a Mesa** — Usar el código hash proporcionado por el DM
+2. **Ver Notas Permitidas** — Acceder solo a las notas con permisos asignados
+3. **Crear Notas Propias** — Añadir notas de personajes o información personal
+4. **Colaborar** — Editar notas donde tengan permisos de escritura
+
+## 🏗️ Estructura del Proyecto
+
+```
+note-taker/
+├── app.py                    # Factory de la aplicación Flask
+├── models.py                # Modelos SQLAlchemy + lógica de permisos
+├── requirements.txt         # Dependencias del proyecto
+├── railway.json            # Configuración de despliegue Railway  
+├── PROJECT_CONTEXT.md      # ⭐ CONTEXTO COMPLETO PARA IA
+├── DEVELOPMENT_GUIDELINES.md # 🛠️ REGLAS DE DESARROLLO
+├── routes/                 # Blueprints organizados por funcionalidad
+│   ├── auth.py            # Rutas de autenticación
+│   ├── tables.py          # Gestión de mesas de juego
+│   └── notes.py           # CRUD notas + sistema de permisos
+├── templates/             # Templates Jinja2
+│   ├── base.html          # Template base con navegación
+│   ├── auth/              # Login, registro, perfil
+│   ├── tables/            # Lista, detalle, gestión de mesas
+│   └── notes/             # Editor, vista, permisos de notas
+├── static/css/
+│   └── style.css          # Estilos personalizados (tema oscuro D&D)
+└── migrations/            # Migraciones de base de datos
+```
+
+## 🚂 Despliegue en Railway
+
+### Deploy con Un Click
 
 1. **Fork this repository** to your GitHub account
 
@@ -100,7 +166,130 @@ A collaborative note-taking web application designed for Dungeon Masters and pla
 
 6. **Generate domain** and access your app!
 
-### Environment Variables
+1. **Fork este repositorio** a tu cuenta de GitHub
+
+2. **Crear proyecto Railway** desde el repositorio GitHub
+
+3. **Agregar base de datos PostgreSQL** al proyecto Railway
+
+4. **Configurar variables de entorno**:
+   ```
+   SECRET_KEY=tu-clave-secreta-super-segura
+   DATABASE_URL=${Postgres.DATABASE_URL}
+   ```
+
+5. **Migraciones automáticas** — Se ejecutan automáticamente via `railway.json`
+
+6. **Generar dominio** ¡y acceder a tu aplicación!
+
+### Estado Actual: ✅ **DESPLEGADO EN PRODUCCIÓN**
+
+La aplicación está completamente funcional y desplegada. Railway maneja automáticamente:
+- ✅ Migraciones de base de datos
+- ✅ Variables de entorno  
+- ✅ Auto-deploy desde `main` branch
+- ✅ Escalabilidad automática
+
+## 🔐 Sistema de Permisos (Funcionalidad Principal)
+
+### Jerarquía de Acceso
+```
+1. 👑 Autor de la Nota    → Control total (view/edit/delete)
+2. 🎭 Dungeon Master     → Control total en su mesa
+3. ⚙️ Permisos Específicos → Configuración individual por nota
+4. 🏰 Permisos de Mesa    → Configuración base para miembros
+```
+
+### Casos de Uso Comunes
+- **Información Pública** — Todos los miembros pueden ver/editar
+- **Notas del DM** — Solo DM y usuarios específicos autorizados
+- **Notas de Jugadores** — Autor + DM + permisos granulares
+- **Secretos de Campaña** — Solo DM o usuarios cuidadosamente seleccionados
+
+### Gestión Visual de Permisos
+- **Botones Claros** — Interfaz intuitiva para asignar accesos
+- **Indicadores Visuales** — Estados de permisos fácilmente identificables  
+- **Acciones Rápidas** — Overlays hover para gestión eficiente
+- **Filtrado Inteligente** — Solo se muestran notas con permisos apropiados
+
+## 🎨 Características de Diseño
+
+### Tema Visual D&D
+- **Paleta Oscura** — Inspirada en la estética de mazmorras
+- **Colores Personalizables** — Cada nota puede tener su estilo único
+- **Tipografía Variable** — Diferentes fuentes para diferentes tipos de contenido
+- **Responsive Design** — Optimizado para móvil y escritorio
+
+### Experiencia de Usuario
+- **Navegación Intuitiva** — Flujo lógico entre mesas y notas
+- **Modales Eficientes** — Gestión rápida sin pérdida de contexto
+- **Feedback Visual** — Estados claros para todas las acciones
+- **Accesibilidad** — Contraste apropiado y navegación por teclado
+
+## ⚠️ Flujo de Desarrollo
+
+### IMPORTANTE para Colaboradores/IA
+
+```bash
+# ✅ SIEMPRE trabajar en rama dev
+git checkout dev
+
+# ✅ Verificar requirements antes de features
+cat requirements.txt
+
+# ✅ Commits descriptivos 
+git commit -m "feat: descripción clara de la funcionalidad"
+
+# ❌ NUNCA push directo a main
+# git push origin main  ← PROHIBIDO
+```
+
+**📖 Documentación Completa**: Ver [`PROJECT_CONTEXT.md`](PROJECT_CONTEXT.md) para contexto técnico detallado y [`DEVELOPMENT_GUIDELINES.md`](DEVELOPMENT_GUIDELINES.md) para reglas de desarrollo.
+
+## 📚 Próximas Funcionalidades Potenciales
+
+### Corto Plazo
+- 🔍 **Sistema de Búsqueda** — Filtros avanzados para notas
+- ⚡ **Optimizaciones** — Rendimiento para mesas con muchas notas
+- 🛡️ **Rate Limiting** — Protección contra abuse
+
+### Mediano Plazo  
+- 🔄 **Colaboración en Tiempo Real** — WebSockets para edición simultánea
+- 📋 **Hojas de Personaje** — Integración con datos de personajes
+- 🎲 **Sistema de Dados** — Tiradas integradas en notas
+
+### Largo Plazo
+- 📱 **Aplicación Móvil** — App nativa para Android/iOS
+- 🔌 **Sistema de Plugins** — Extensiones de terceros
+- 📊 **Rastreador de Iniciativa** — Gestión de combate integrada
+
+## 🤝 Contribución y Soporte
+
+### Para Desarrolladores
+- **Código Abierto** — Contribuciones bienvenidas via PRs a `dev`
+- **Documentación Detallada** — Contexto completo en archivos MD
+- **Testing Local** — Setup rápido con instrucciones claras
+
+### Para Usuarios  
+- **Aplicación Estable** — Funcionalidad core completamente probada
+- **Soporte Continuo** — Actualizaciones regulares y mejoras
+- **Feedback Bienvenido** — Sugerencias para futuras funcionalidades
+
+---
+
+## 📄 Licencia
+
+Este proyecto está bajo la Licencia MIT. Ver archivo `LICENSE` para detalles completos.
+
+## 📞 Contacto
+
+**Desarrollador**: Facundo  
+**Estado del Proyecto**: ✅ Producción Estable  
+**Última Actualización**: Febrero 2026
+
+---
+
+⚔️ *"En cada campaña, las mejores historias vienen de las mejores notas..."*
 
 | Variable | Description | Example |
 |----------|-------------|---------|

@@ -7,11 +7,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from models import db, User
+from models import db, User, bcrypt
 
 migrate = Migrate()
 login_manager = LoginManager()
-bcrypt = Bcrypt()
 
 
 def create_app():

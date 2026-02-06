@@ -73,6 +73,23 @@ def create_app():
         
     app.logger.info("Initializing migrate...")
     migrate.init_app(app, db)
+    
+    # Ensure tables exist (fallback for Railway)
+    with app.app_context():
+        try:
+            # Try to query a table to see if schema exists
+            db.session.execute(db.text('SELECT 1 FROM users LIMIT 1'))
+            app.logger.info("Database schema exists")
+        except Exception as e:
+            app.logger.warning(f"Database schema not found: {e}")
+            app.logger.info("Creating all tables...")
+            try:
+                db.create_all()
+                app.logger.info("All tables created successfully")
+            except Exception as create_error:
+                app.logger.error(f"Failed to create tables: {create_error}")
+                raise
+    
     app.logger.info("Initializing login manager...")
     login_manager.init_app(app)
     app.logger.info("Initializing bcrypt...")
@@ -108,7 +125,8 @@ def create_app():
 
     @app.route("/health")
     def health():
-        return {"status": "ok", "timestamp": datetime.now().isoformat()}, 200
+        app.logger.info("Health check called")
+        return {"status": "ok", "timestamp": datetime.now().isoformat(), "app": "quest-log"}, 200
     
     @app.route("/db-health")
     def db_health():
@@ -121,6 +139,25 @@ def create_app():
         except Exception as e:
             app.logger.error(f"DB Health check failed: {e}")
             return {"status": "error", "database": "disconnected", "error": str(e)}, 503
+
+    @app.route("/db-tables")
+    def db_tables():
+        try:
+            with app.app_context():
+                # Get table names from the database
+                if 'postgresql' in database_url:
+                    result = db.session.execute(db.text(
+                        "SELECT table_name FROM information_schema.tables WHERE table_schema='public'"
+                    ))
+                else:  # SQLite
+                    result = db.session.execute(db.text(
+                        "SELECT name FROM sqlite_master WHERE type='table'"
+                    ))
+                tables = [row[0] for row in result]
+                return {"status": "ok", "tables": tables}, 200
+        except Exception as e:
+            app.logger.error(f"DB Tables check failed: {e}")
+            return {"status": "error", "error": str(e)}, 503
 
     # --- Error handlers ---
     @app.errorhandler(500)

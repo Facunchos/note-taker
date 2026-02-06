@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from flask import Flask, redirect, url_for
 from flask_migrate import Migrate
 from flask_login import LoginManager
@@ -38,15 +39,22 @@ def create_app():
     database_url = os.environ.get("DATABASE_URL")
     secret_key = os.environ.get("SECRET_KEY", "dev-fallback-key")
     
+    app.logger.info(f"SECRET_KEY present: {'Yes' if secret_key != 'dev-fallback-key' else 'No (using fallback)'}")
+    
     if not database_url:
         app.logger.warning("No DATABASE_URL found, using SQLite fallback")
         database_url = "sqlite:///dev.db"
     else:
-        app.logger.info(f"Database URL found: {database_url[:30]}...")
+        app.logger.info(f"Database URL found: {database_url[:50]}...")
         # Railway uses postgres:// but SQLAlchemy needs postgresql://
         if database_url.startswith("postgres://"):
             database_url = database_url.replace("postgres://", "postgresql://", 1)
             app.logger.info("Fixed postgres:// to postgresql://")
+        
+        # Add connection pool settings for Railway
+        if "postgresql://" in database_url and "?" not in database_url:
+            database_url += "?sslmode=require"
+            app.logger.info("Added SSL mode requirement")
     
     app.logger.info(f"Secret key present: {'Yes' if secret_key else 'No'}")
 
@@ -100,13 +108,18 @@ def create_app():
 
     @app.route("/health")
     def health():
+        return {"status": "ok", "timestamp": datetime.now().isoformat()}, 200
+    
+    @app.route("/db-health")
+    def db_health():
         try:
             # Test database connection
             with app.app_context():
                 db.session.execute(db.text('SELECT 1'))
+                db.session.commit()
             return {"status": "ok", "database": "connected"}, 200
         except Exception as e:
-            app.logger.error(f"Health check failed: {e}")
+            app.logger.error(f"DB Health check failed: {e}")
             return {"status": "error", "database": "disconnected", "error": str(e)}, 503
 
     # --- Error handlers ---

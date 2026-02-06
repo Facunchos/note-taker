@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+
+{% block title %}🎲 Dice Roller{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="header-section">
+        <h1>🎲 Universal Dice Roller</h1>
+        <p class="subtitle">Roll dice for any purpose - global or table-specific</p>
+    </div>
+
+    <!-- Quick Dice Section -->
+    <div class="card">
+        <h2>⚡ Quick Rolls</h2>
+        <div class="dice-grid">
+            <button class="dice-button" onclick="quickRoll('d4')">
+                <span class="dice-icon">🎲</span>
+                <span>d4</span>
+            </button>
+            <button class="dice-button" onclick="quickRoll('d6')">
+                <span class="dice-icon">🎲</span>
+                <span>d6</span>
+            </button>
+            <button class="dice-button" onclick="quickRoll('d8')">
+                <span class="dice-icon">🎲</span>
+                <span>d8</span>
+            </button>
+            <button class="dice-button" onclick="quickRoll('d10')">
+                <span class="dice-icon">🎲</span>
+                <span>d10</span>
+            </button>
+            <button class="dice-button" onclick="quickRoll('d12')">
+                <span class="dice-icon">🎲</span>
+                <span>d12</span>
+            </button>
+            <button class="dice-button special" onclick="quickRoll('d20')">
+                <span class="dice-icon">🎯</span>
+                <span>d20</span>
+            </button>
+            <button class="dice-button" onclick="quickRoll('d100')">
+                <span class="dice-icon">💯</span>
+                <span>d100</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Custom Dice Expression -->
+    <div class="card">
+        <h2>🎯 Custom Roll</h2>
+        <form id="diceForm" onsubmit="rollCustomDice(event)">
+            <div class="form-group">
+                <label for="expression">Dice Expression</label>
+                <input 
+                    type="text" 
+                    id="expression" 
+                    name="expression" 
+                    placeholder="2d6+3, 4d8, 1d20, etc."
+                    pattern="^\d+d\d+([+-]\d+)?$"
+                    title="Format: XdY+Z (e.g., 2d6+3)"
+                    required
+                >
+                <small class="help-text">Format: XdY+Z (e.g., 2d6+3, 1d20, 4d8-2)</small>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description (optional)</label>
+                <input 
+                    type="text" 
+                    id="description" 
+                    name="description" 
+                    placeholder="Attack roll, Damage, Skill check..."
+                >
+            </div>
+
+            <div class="checkbox-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="advantage" name="advantage">
+                    <span class="checkmark advantage">⬆️ Advantage</span>
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="disadvantage" name="disadvantage">
+                    <span class="checkmark disadvantage">⬇️ Disadvantage</span>
+                </label>
+            </div>
+
+            <button type="submit" class="btn primary" id="rollButton">
+                🎲 Roll Dice
+            </button>
+        </form>
+    </div>
+
+    <!-- Recent Rolls -->
+    <div class="card" id="recentRolls" style="display: none;">
+        <h2>📊 Recent Roll</h2>
+        <div id="rollResult"></div>
+    </div>
+
+    <!-- History Link -->
+    <div class="action-links">
+        <a href="{{ url_for('dice.history') }}" class="btn secondary">
+            📜 View Full History
+        </a>
+    </div>
+</div>
+
+<style>
+.dice-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.dice-button {
+    background: var(--bg-card);
+    border: 2px solid var(--accent);
+    border-radius: 12px;
+    padding: 1rem;
+    color: var(--text);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 80px;
+}
+
+.dice-button:hover {
+    background: var(--accent);
+    color: var(--bg);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(201, 168, 76, 0.3);
+}
+
+.dice-button.special {
+    border-color: #ff6b6b;
+    background: linear-gradient(135deg, var(--bg-card) 0%, #2a1f3a 100%);
+}
+
+.dice-button.special:hover {
+    background: #ff6b6b;
+    border-color: #ff6b6b;
+}
+
+.dice-icon {
+    font-size: 1.5rem;
+}
+
+.checkbox-group {
+    display: flex;
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.checkbox-label:hover {
+    background: var(--bg-card);
+    border-color: var(--accent);
+}
+
+.checkbox-label input[type="checkbox"] {
+    margin: 0;
+}
+
+.checkmark.advantage {
+    color: #4ade80;
+}
+
+.checkmark.disadvantage {
+    color: #f87171;
+}
+
+.roll-result {
+    background: var(--bg);
+    border: 2px solid var(--accent);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.roll-expression {
+    font-family: 'Courier New', monospace;
+    font-size: 1.1rem;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+}
+
+.roll-total {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--text);
+    text-align: center;
+    margin: 1rem 0;
+}
+
+.roll-details {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    text-align: center;
+}
+
+.advantage { color: #4ade80; }
+.disadvantage { color: #f87171; }
+
+#rollButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+</style>
+
+<script>
+// Prevent both advantage and disadvantage being selected
+document.getElementById('advantage').addEventListener('change', function() {
+    if (this.checked) {
+        document.getElementById('disadvantage').checked = false;
+    }
+});
+
+document.getElementById('disadvantage').addEventListener('change', function() {
+    if (this.checked) {
+        document.getElementById('advantage').checked = false;
+    }
+});
+
+function quickRoll(diceType) {
+    const form = document.getElementById('diceForm');
+    document.getElementById('expression').value = `1${diceType}`;
+    document.getElementById('description').value = `Quick ${diceType} roll`;
+    rollCustomDice(new Event('submit'));
+}
+
+async function rollCustomDice(event) {
+    event.preventDefault();
+    
+    const button = document.getElementById('rollButton');
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.textContent = '🎲 Rolling...';
+    
+    try {
+        const formData = new FormData(event.target);
+        const response = await fetch('{{ url_for("dice.roll") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                expression: formData.get('expression'),
+                description: formData.get('description') || '',
+                advantage: formData.get('advantage') === 'on',
+                disadvantage: formData.get('disadvantage') === 'on'
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            displayRollResult(data.roll);
+            // Clear form
+            document.getElementById('expression').value = '';
+            document.getElementById('description').value = '';
+            document.getElementById('advantage').checked = false;
+            document.getElementById('disadvantage').checked = false;
+        } else {
+            alert('Error: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while rolling dice');
+    } finally {
+        button.disabled = false;
+        button.textContent = originalText;
+    }
+}
+
+function displayRollResult(roll) {
+    const container = document.getElementById('recentRolls');
+    const resultDiv = document.getElementById('rollResult');
+    
+    let advantageText = '';
+    if (roll.has_advantage) advantageText = ' <span class="advantage">(Advantage)</span>';
+    if (roll.has_disadvantage) advantageText = ' <span class="disadvantage">(Disadvantage)</span>';
+    
+    let detailsText = '';
+    if (roll.individual_rolls.length > 0) {
+        const rollValues = roll.individual_rolls.map(r => {
+            if (r.type === 'normal') {
+                return r.final.toString();
+            } else {
+                return `[${r.rolls.join(', ')}] → ${r.final}`;
+            }
+        }).join(' + ');
+        detailsText = rollValues;
+        if (roll.modifier !== 0) {
+            detailsText += ` ${roll.modifier >= 0 ? '+' : ''}${roll.modifier}`;
+        }
+    }
+    
+    resultDiv.innerHTML = `
+        <div class="roll-result">
+            <div class="roll-expression">
+                ${roll.expression}${advantageText}
+                ${roll.description ? `<br><em>"${roll.description}"</em>` : ''}
+            </div>
+            <div class="roll-total">${roll.result}</div>
+            <div class="roll-details">${detailsText}</div>
+        </div>
+    `;
+    
+    container.style.display = 'block';
+    container.scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+{% endblock %}

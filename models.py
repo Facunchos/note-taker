@@ -202,3 +202,91 @@ class Note(db.Model):
 
     def __repr__(self):
         return f"<Note {self.title}>"
+
+
+class DiceRoll(db.Model):
+    __tablename__ = "dice_rolls"
+
+    id = db.Column(db.Integer, primary_key=True)
+    table_id = db.Column(db.Integer, db.ForeignKey("game_tables.id"), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    dice_expression = db.Column(db.String(100), nullable=False)  # "2d6+3", "1d20"
+    result = db.Column(db.Integer, nullable=False)
+    individual_rolls = db.Column(db.JSON, nullable=False)  # [4, 2] for 2d6
+    modifier = db.Column(db.Integer, default=0)
+    has_advantage = db.Column(db.Boolean, default=False)
+    has_disadvantage = db.Column(db.Boolean, default=False)
+    description = db.Column(db.Text, default="")  # "Attack roll", "Damage", etc.
+    created_at = db.Column(
+        db.DateTime, default=lambda: datetime.now(timezone.utc)
+    )
+
+    user = db.relationship("User", backref="dice_rolls")
+    table = db.relationship("GameTable", backref="dice_rolls")
+
+    def __repr__(self):
+        return f"<DiceRoll {self.dice_expression} = {self.result}>"
+
+
+class InitiativeSession(db.Model):
+    __tablename__ = "initiative_sessions"
+
+    id = db.Column(db.Integer, primary_key=True)
+    table_id = db.Column(db.Integer, db.ForeignKey("game_tables.id"), nullable=False)
+    name = db.Column(db.String(200), nullable=False, default="Combat Session")
+    is_active = db.Column(db.Boolean, default=True)
+    current_turn = db.Column(db.Integer, default=0)  # Index in sorted entries
+    round_number = db.Column(db.Integer, default=1)
+    created_at = db.Column(
+        db.DateTime, default=lambda: datetime.now(timezone.utc)
+    )
+
+    table = db.relationship("GameTable", backref="initiative_sessions")
+    entries = db.relationship(
+        "InitiativeEntry", backref="session", lazy=True, cascade="all, delete-orphan"
+    )
+
+    def get_sorted_entries(self):
+        """Get initiative entries sorted by initiative score (highest first)."""
+        return sorted(self.entries, key=lambda x: x.initiative_score, reverse=True)
+
+    def get_current_character(self):
+        """Get the character whose turn it is."""
+        sorted_entries = self.get_sorted_entries()
+        if not sorted_entries or self.current_turn >= len(sorted_entries):
+            return None
+        return sorted_entries[self.current_turn]
+
+    def next_turn(self):
+        """Advance to next character's turn."""
+        sorted_entries = self.get_sorted_entries()
+        if not sorted_entries:
+            return
+        
+        self.current_turn = (self.current_turn + 1) % len(sorted_entries)
+        if self.current_turn == 0:
+            self.round_number += 1
+
+    def __repr__(self):
+        return f"<InitiativeSession {self.name} (Round {self.round_number})>"
+
+
+class InitiativeEntry(db.Model):
+    __tablename__ = "initiative_entries"
+
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(
+        db.Integer, db.ForeignKey("initiative_sessions.id"), nullable=False
+    )
+    character_name = db.Column(db.String(100), nullable=False)
+    initiative_score = db.Column(db.Integer, nullable=False)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id"), nullable=True
+    )  # NULL for NPCs/enemies
+    custom_field = db.Column(db.String(100), default="")  # HP, AC, or custom tracking
+    is_npc = db.Column(db.Boolean, default=False)
+
+    user = db.relationship("User", backref="initiative_entries")
+
+    def __repr__(self):
+        return f"<InitiativeEntry {self.character_name} ({self.initiative_score})>"

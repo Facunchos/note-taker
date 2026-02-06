@@ -1,0 +1,505 @@
+{% extends "base.html" %}
+
+{% block title %}⚔️ Initiative Tracker - {{ table.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="header-section">
+        <h1>⚔️ Initiative Tracker</h1>
+        <p class="subtitle">{{ table.name }} — DM: {{ table.owner.username }}</p>
+    </div>
+
+    {% if not session %}
+    <!-- Start New Session -->
+    <div class="card">
+        <h2>🎯 Start Combat Session</h2>
+        <form id="startSessionForm" onsubmit="startSession(event)">
+            <div class="form-group">
+                <label for="sessionName">Session Name</label>
+                <input 
+                    type="text" 
+                    id="sessionName" 
+                    name="name" 
+                    placeholder="Boss Fight, Random Encounter, etc."
+                    value="Combat Session"
+                >
+            </div>
+            <button type="submit" class="btn primary">⚔️ Start Initiative</button>
+        </form>
+    </div>
+    {% else %}
+    <!-- Active Session -->
+    <div class="card initiative-header">
+        <div class="session-info">
+            <h2>{{ session.name }}</h2>
+            <div class="session-stats">
+                <span class="stat">Round {{ session.round_number }}</span>
+                <span class="stat">{{ session.entries|length }} Characters</span>
+            </div>
+        </div>
+        <div class="session-controls">
+            <button onclick="nextTurn()" class="btn primary">
+                ⏭️ Next Turn
+            </button>
+            <button onclick="sortInitiative()" class="btn secondary">
+                🔄 Sort by Initiative
+            </button>
+            <button onclick="endSession()" class="btn danger">
+                🏁 End Combat
+            </button>
+        </div>
+    </div>
+
+    <!-- Add Character Form -->
+    <div class="card">
+        <h3>➕ Add Character</h3>
+        <form id="addCharacterForm" onsubmit="addCharacter(event)">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="charName">Character Name</label>
+                    <input 
+                        type="text" 
+                        id="charName" 
+                        name="name" 
+                        placeholder="Character or Enemy name"
+                        required
+                    >
+                </div>
+                <div class="form-group">
+                    <label for="initiative">Initiative Score</label>
+                    <input 
+                        type="number" 
+                        id="initiative" 
+                        name="initiative" 
+                        min="0" 
+                        max="50"
+                        placeholder="0-50"
+                        required
+                    >
+                </div>
+                <div class="form-group">
+                    <label for="customField">HP/Notes</label>
+                    <input 
+                        type="text" 
+                        id="customField" 
+                        name="custom_field" 
+                        placeholder="HP, AC, conditions..."
+                    >
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="playerSelect">Player (Optional)</label>
+                    <select id="playerSelect" name="user_id">
+                        <option value="">NPC/Enemy</option>
+                        {% for user, membership in table_members %}
+                        <option value="{{ user.id }}">{{ user.username }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="isNPC" name="is_npc">
+                        <span>🐉 Enemy/NPC</span>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn primary full-width">
+                        ➕ Add to Initiative
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Initiative Order -->
+    {% if session.entries %}
+    <div class="card">
+        <h3>📋 Initiative Order</h3>
+        <div class="initiative-list" id="initiativeList">
+            {% for entry in session.get_sorted_entries() %}
+            <div class="initiative-entry {{ 'current-turn' if loop.index0 == session.current_turn else '' }}" data-entry-id="{{ entry.id }}">
+                <div class="entry-info">
+                    <div class="entry-header">
+                        <span class="character-name">
+                            {{ entry.character_name }}
+                            {% if entry.is_npc %}
+                            <span class="npc-badge">🐉</span>
+                            {% elif entry.user %}
+                            <span class="player-badge">{{ entry.user.username }}</span>
+                            {% endif %}
+                        </span>
+                        <span class="initiative-score">{{ entry.initiative_score }}</span>
+                    </div>
+                    {% if entry.custom_field %}
+                    <div class="entry-custom">
+                        <input 
+                            type="text" 
+                            class="custom-field-input" 
+                            value="{{ entry.custom_field }}"
+                            onblur="updateCustomField({{ entry.id }}, this.value)"
+                            placeholder="HP, conditions, notes..."
+                        >
+                    </div>
+                    {% else %}
+                    <div class="entry-custom">
+                        <input 
+                            type="text" 
+                            class="custom-field-input" 
+                            placeholder="Add HP, conditions, notes..."
+                            onblur="updateCustomField({{ entry.id }}, this.value)"
+                        >
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="entry-actions">
+                    <button onclick="deleteEntry({{ entry.id }})" class="btn-icon danger" title="Remove">
+                        🗑️
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <!-- Back to Table -->
+    <div class="action-links">
+        <a href="{{ url_for('tables.detail', table_id=table.id) }}" class="btn secondary">
+            ← Back to {{ table.name }}
+        </a>
+    </div>
+</div>
+
+<style>
+.initiative-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.session-info h2 {
+    margin: 0;
+    color: var(--accent);
+}
+
+.session-stats {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.stat {
+    background: var(--bg);
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.session-controls {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 2fr;
+    gap: 1rem;
+    align-items: end;
+}
+
+.initiative-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.initiative-entry {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.initiative-entry.current-turn {
+    border-color: var(--accent);
+    background: linear-gradient(135deg, var(--bg-card) 0%, rgba(201, 168, 76, 0.1) 100%);
+    box-shadow: 0 0 12px rgba(201, 168, 76, 0.3);
+}
+
+.entry-info {
+    flex: 1;
+}
+
+.entry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.character-name {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.initiative-score {
+    background: var(--accent);
+    color: var(--bg);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-weight: 700;
+    min-width: 40px;
+    text-align: center;
+}
+
+.npc-badge {
+    font-size: 0.8rem;
+    background: #e74c3c;
+    color: white;
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    margin-left: 0.5rem;
+}
+
+.player-badge {
+    font-size: 0.8rem;
+    background: var(--info);
+    color: white;
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    margin-left: 0.5rem;
+}
+
+.custom-field-input {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.5rem;
+    color: var(--text);
+    font-size: 0.9rem;
+    width: 100%;
+}
+
+.custom-field-input:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
+.entry-actions {
+    margin-left: 1rem;
+}
+
+.btn-icon {
+    background: transparent;
+    border: 1px solid var(--border);
+    padding: 0.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.btn-icon:hover {
+    background: var(--danger);
+    border-color: var(--danger);
+}
+
+.full-width {
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .initiative-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .session-controls {
+        justify-content: center;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+    
+    .initiative-entry {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+    
+    .entry-actions {
+        margin-left: 0;
+        text-align: center;
+    }
+}
+</style>
+
+<script>
+const tableId = {{ table.id }};
+const sessionId = {{ session.id if session else 'null' }};
+
+async function startSession(event) {
+    event.preventDefault();
+    
+    try {
+        const formData = new FormData(event.target);
+        const response = await fetch('{{ url_for("initiative.create_session") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                table_id: tableId,
+                name: formData.get('name')
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while starting the session');
+    }
+}
+
+async function addCharacter(event) {
+    event.preventDefault();
+    
+    try {
+        const formData = new FormData(event.target);
+        const response = await fetch(`/initiative/session/${sessionId}/add_character`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                name: formData.get('name'),
+                initiative: parseInt(formData.get('initiative')),
+                custom_field: formData.get('custom_field') || '',
+                user_id: formData.get('user_id') || null,
+                is_npc: formData.get('is_npc') === 'on'
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while adding the character');
+    }
+}
+
+async function deleteEntry(entryId) {
+    if (!confirm('Remove this character from initiative?')) return;
+    
+    try {
+        const response = await fetch(`/initiative/entry/${entryId}/delete`, {
+            method: 'POST'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error removing character');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred');
+    }
+}
+
+async function updateCustomField(entryId, value) {
+    try {
+        await fetch(`/initiative/entry/${entryId}/update`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                custom_field: value
+            })
+        });
+    } catch (error) {
+        console.error('Error updating field:', error);
+    }
+}
+
+async function nextTurn() {
+    try {
+        const response = await fetch(`/initiative/session/${sessionId}/next_turn`, {
+            method: 'POST'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred');
+    }
+}
+
+async function sortInitiative() {
+    try {
+        const response = await fetch(`/initiative/session/${sessionId}/sort`);
+        const data = await response.json();
+        
+        if (data.success) {
+            location.reload();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+async function endSession() {
+    if (!confirm('End this combat session? This cannot be undone.')) return;
+    
+    try {
+        const response = await fetch(`/initiative/session/${sessionId}/end`, {
+            method: 'POST'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred');
+    }
+}
+</script>
+{% endblock %}

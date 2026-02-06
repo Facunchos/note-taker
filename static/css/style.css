@@ -449,6 +449,23 @@ textarea.form-control { resize: vertical; min-height: 200px; }
     margin-bottom: 0.3rem;
 }
 
+/* ===== Dice Navigation ===== */
+.dice-nav {
+    background: linear-gradient(135deg, #c9a84c 0%, #e0c068 100%);
+    color: #0f0f1a !important;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.dice-nav:hover {
+    background: linear-gradient(135deg, #e0c068 0%, #f5d982 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(201, 168, 76, 0.3);
+}
+
 /* ===== Footer ===== */
 .footer {
     text-align: center;
@@ -458,11 +475,107 @@ textarea.form-control { resize: vertical; min-height: 200px; }
     border-top: 1px solid var(--border);
 }
 
+.footer-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.version-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+}
+
+.version {
+    background: var(--accent);
+    color: var(--bg);
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.separator {
+    color: var(--text-muted);
+}
+
+.features {
+    color: var(--text-muted);
+}
+
+/* ===== Game Tools ===== */
+.tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.tool-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--text);
+    transition: all 0.3s ease;
+}
+
+.tool-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.tool-icon {
+    font-size: 2rem;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--bg-card);
+}
+
+.dice-tool:hover .tool-icon {
+    background: linear-gradient(135deg, #c9a84c 0%, #e0c068 100%);
+}
+
+.initiative-tool:hover .tool-icon {
+    background: linear-gradient(135deg, #e74c3c 0%, #ff6b6b 100%);
+}
+
+.history-tool:hover .tool-icon {
+    background: linear-gradient(135deg, #3498db 0%, #5dade2 100%);
+}
+
+.tool-info {
+    flex: 1;
+}
+
+.tool-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.tool-desc {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 600px) {
     .navbar { padding: 0.5rem 1rem; }
     .nav-links { gap: 0.5rem; }
     .container { padding: 1rem 0.75rem; }
     .notes-grid, .table-grid { grid-template-columns: 1fr; }
+    .tools-grid { grid-template-columns: 1fr; }
     .editor-toolbar { flex-direction: column; align-items: stretch; }
 }

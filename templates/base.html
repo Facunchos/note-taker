@@ -14,6 +14,7 @@
             <a href="{{ url_for('tables.my_tables') }}">My Tables</a>
             <a href="{{ url_for('tables.create') }}">New Table</a>
             <a href="{{ url_for('tables.join') }}">Join Table</a>
+            <a href="{{ url_for('dice.index') }}" class="dice-nav">🎲 Dice</a>
             <span class="nav-user">🧙 {{ current_user.username }}</span>
             <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline">Logout</a>
         </div>
@@ -35,7 +36,14 @@
     </main>
 
     <footer class="footer">
-        <p>Quest Log — A DnD Campaign Note Taker</p>
+        <div class="footer-content">
+            <p>Quest Log — A DnD Campaign Note Taker</p>
+            <div class="version-info">
+                <span class="version">v{{ version or '2.0.0' }}</span>
+                <span class="separator">•</span>
+                <span class="features">🎲 Dice & ⚔️ Initiative</span>
+            </div>
+        </div>
     </footer>
 
     {% block scripts %}{% endblock %}

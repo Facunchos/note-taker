@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from models import db, User, bcrypt
+from models import db, User, bcrypt, DiceRoll, InitiativeSession, InitiativeEntry
 
 migrate = Migrate()
 login_manager = LoginManager()
@@ -20,6 +20,19 @@ def create_app():
     import logging
     logging.basicConfig(level=logging.INFO)
     app.logger.info("Starting app creation...")
+
+    # --- Version Info ---
+    def get_version():
+        try:
+            with open("VERSION", "r") as f:
+                return f.read().strip()
+        except FileNotFoundError:
+            return os.environ.get("APP_VERSION", "2.0.0")
+
+    # Make version available in all templates
+    @app.context_processor
+    def inject_version():
+        return {"version": get_version()}
 
     # --- Config ---
     database_url = os.environ.get("DATABASE_URL")
@@ -70,10 +83,14 @@ def create_app():
     from routes.auth import auth_bp
     from routes.tables import tables_bp
     from routes.notes import notes_bp
+    from routes.dice import dice_bp
+    from routes.initiative import initiative_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(tables_bp)
     app.register_blueprint(notes_bp)
+    app.register_blueprint(dice_bp)
+    app.register_blueprint(initiative_bp)
     app.logger.info("App creation completed successfully!")
 
     # --- Root route ---

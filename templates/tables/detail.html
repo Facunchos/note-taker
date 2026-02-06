@@ -61,6 +61,40 @@
     </ul>
 </div>
 
+<!-- Game Tools Section -->
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header">
+        <h3>🎲 Game Tools</h3>
+    </div>
+    <div class="tools-grid">
+        <a href="{{ url_for('dice.index') }}?table_id={{ table.id }}" class="tool-card dice-tool">
+            <span class="tool-icon">🎲</span>
+            <div class="tool-info">
+                <div class="tool-name">Dice Roller</div>
+                <div class="tool-desc">Roll dice for this table</div>
+            </div>
+        </a>
+        
+        {% if is_owner or membership.role == 'dm' %}
+        <a href="{{ url_for('initiative.table_initiative', table_id=table.id) }}" class="tool-card initiative-tool">
+            <span class="tool-icon">⚔️</span>
+            <div class="tool-info">
+                <div class="tool-name">Initiative Tracker</div>
+                <div class="tool-desc">Manage combat order (DM only)</div>
+            </div>
+        </a>
+        {% endif %}
+        
+        <a href="{{ url_for('dice.table_history', table_id=table.id) }}" class="tool-card history-tool">
+            <span class="tool-icon">📊</span>
+            <div class="tool-info">
+                <div class="tool-name">Dice History</div>
+                <div class="tool-desc">View all dice rolls for this table</div>
+            </div>
+        </a>
+    </div>
+</div>
+
 <!-- Notes Section -->
 <div style="margin-top: 1.5rem;">
     <div class="section-header">

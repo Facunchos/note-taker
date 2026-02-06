@@ -2,7 +2,7 @@
   "$schema": "https://railway.com/railway.schema.json",
   "build": {},
   "deploy": {
-    "startCommand": "gunicorn app:app --bind 0.0.0.0:$PORT",
+    "startCommand": "python -m flask db upgrade && gunicorn app:app --bind 0.0.0.0:$PORT --timeout 60 --workers 2",
     "healthcheckPath": "/health",
     "restartPolicyType": "ON_FAILURE"
   }

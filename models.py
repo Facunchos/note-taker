@@ -92,6 +92,27 @@ class TableMember(db.Model):
         return f"<TableMember user={self.user_id} table={self.table_id}>"
 
 
+class NotePermission(db.Model):
+    __tablename__ = "note_permissions"
+
+    id = db.Column(db.Integer, primary_key=True)
+    note_id = db.Column(db.Integer, db.ForeignKey("notes.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    can_view = db.Column(db.Boolean, default=True)
+    can_edit = db.Column(db.Boolean, default=True)
+    granted_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    granted_at = db.Column(
+        db.DateTime, default=lambda: datetime.now(timezone.utc)
+    )
+
+    __table_args__ = (
+        db.UniqueConstraint("note_id", "user_id", name="unique_note_user_permission"),
+    )
+
+    def __repr__(self):
+        return f"<NotePermission note={self.note_id} user={self.user_id}>"
+
+
 class Note(db.Model):
     __tablename__ = "notes"
 
@@ -103,10 +124,13 @@ class Note(db.Model):
         db.Integer, db.ForeignKey("users.id"), nullable=False
     )
     title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, default="")
     content = db.Column(db.Text, default="")
     bg_color = db.Column(db.String(7), default="#ffffff")
     text_color = db.Column(db.String(7), default="#1a1a2e")
     font_size = db.Column(db.Integer, default=16)  # in pixels
+    is_template = db.Column(db.Boolean, default=False)  # for duplicated notes
+    original_note_id = db.Column(db.Integer, db.ForeignKey("notes.id"), nullable=True)
     created_at = db.Column(
         db.DateTime, default=lambda: datetime.now(timezone.utc)
     )
@@ -115,6 +139,66 @@ class Note(db.Model):
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
     )
+
+    # Relationships
+    permissions = db.relationship("NotePermission", backref="note", lazy=True, cascade="all, delete-orphan")
+    original = db.relationship("Note", remote_side=[id], backref="duplicates")
+
+    def user_can_view(self, user):
+        """Check if user can view this note."""
+        # Author can always view
+        if self.author_id == user.id:
+            return True
+        
+        # Check if user is table member
+        membership = TableMember.query.filter_by(
+            table_id=self.table_id, user_id=user.id
+        ).first()
+        if not membership:
+            return False
+        
+        # DM can always view
+        if membership.role == 'dm':
+            return True
+            
+        # Check specific note permission
+        permission = NotePermission.query.filter_by(
+            note_id=self.id, user_id=user.id
+        ).first()
+        
+        if permission:
+            return permission.can_view
+        
+        # Default: table members can view if they have general note access
+        return membership.can_view_notes
+
+    def user_can_edit(self, user):
+        """Check if user can edit this note."""
+        # Author can always edit
+        if self.author_id == user.id:
+            return True
+            
+        # Check if user is table member
+        membership = TableMember.query.filter_by(
+            table_id=self.table_id, user_id=user.id
+        ).first()
+        if not membership:
+            return False
+        
+        # DM can always edit
+        if membership.role == 'dm':
+            return True
+            
+        # Check specific note permission
+        permission = NotePermission.query.filter_by(
+            note_id=self.id, user_id=user.id
+        ).first()
+        
+        if permission:
+            return permission.can_edit and permission.can_view
+        
+        # Default: table members can edit if they have general note access
+        return membership.can_view_notes
 
     def __repr__(self):
         return f"<Note {self.title}>"

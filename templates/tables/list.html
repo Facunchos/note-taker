@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}My Tables{% endblock %}
+
+{% block content %}
+<div class="section-header">
+    <h1>🎲 My Tables</h1>
+    <div class="btn-group">
+        <a href="{{ url_for('tables.create') }}" class="btn btn-primary">+ New Table</a>
+        <a href="{{ url_for('tables.join') }}" class="btn btn-outline">Join Table</a>
+    </div>
+</div>
+
+{% if owned %}
+<h2 style="margin-bottom: 1rem; color: var(--accent);">📜 Tables I Own</h2>
+<div class="table-grid">
+    {% for table in owned %}
+    <a href="{{ url_for('tables.detail', table_id=table.id) }}" class="table-card" style="color: inherit;">
+        <h3>{{ table.name }}</h3>
+        <span class="hash-code">{{ table.hash_code }}</span>
+        {% if table.description %}
+        <p class="meta">{{ table.description[:80] }}{% if table.description|length > 80 %}...{% endif %}</p>
+        {% endif %}
+        <p class="meta">{{ table.members|length }} member{{ 's' if table.members|length != 1 }} · {{ table.notes|length }} note{{ 's' if table.notes|length != 1 }}</p>
+    </a>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if joined %}
+<h2 style="margin: 2rem 0 1rem; color: var(--accent);">🗡️ Tables I Joined</h2>
+<div class="table-grid">
+    {% for table in joined %}
+    <a href="{{ url_for('tables.detail', table_id=table.id) }}" class="table-card" style="color: inherit;">
+        <h3>{{ table.name }}</h3>
+        <p class="meta">Owned by {{ table.owner.username }}</p>
+        <p class="meta">{{ table.members|length }} member{{ 's' if table.members|length != 1 }} · {{ table.notes|length }} note{{ 's' if table.notes|length != 1 }}</p>
+    </a>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if not owned and not joined %}
+<div class="empty-state">
+    <div class="icon">🏰</div>
+    <h2>No tables yet</h2>
+    <p>Create a new table to start your campaign, or join one with a code!</p>
+    <div class="btn-group" style="justify-content: center; margin-top: 1rem;">
+        <a href="{{ url_for('tables.create') }}" class="btn btn-primary">Create Table</a>
+        <a href="{{ url_for('tables.join') }}" class="btn btn-outline">Join with Code</a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Sign Up{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <h1>⚔️ Quest Log</h1>
+    <p class="subtitle">Register your character</p>
+
+    <div class="card">
+        <form method="POST">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" class="form-control"
+                       value="{{ username | default('') }}" minlength="3" required autofocus>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" class="form-control"
+                       value="{{ email | default('') }}" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" class="form-control"
+                       minlength="6" required>
+            </div>
+            <div class="form-group">
+                <label for="confirm_password">Confirm Password</label>
+                <input type="password" id="confirm_password" name="confirm_password"
+                       class="form-control" minlength="6" required>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%">Create Account</button>
+        </form>
+    </div>
+
+    <p class="auth-footer">
+        Already registered? <a href="{{ url_for('auth.login') }}">Login here</a>
+    </p>
+</div>
+{% endblock %}

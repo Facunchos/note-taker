@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}{{ table.name }}{% endblock %}
+
+{% block content %}
+<div class="section-header">
+    <div>
+        <h1>{{ table.name }}</h1>
+        {% if table.description %}
+        <p style="color: var(--text-muted); margin-top: 0.3rem;">{{ table.description }}</p>
+        {% endif %}
+    </div>
+    <a href="{{ url_for('tables.my_tables') }}" class="btn btn-outline btn-sm">← Back</a>
+</div>
+
+<!-- Hash Code -->
+<div class="hash-display">
+    <div class="label">Share this code to invite players</div>
+    <div class="code">{{ table.hash_code }}</div>
+</div>
+
+<!-- Members Section -->
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header">
+        <h3>👥 Members ({{ members|length }})</h3>
+        {% if not is_owner %}
+        <form method="POST" action="{{ url_for('tables.leave', table_id=table.id) }}"
+              onsubmit="return confirm('Leave this table?')">
+            <button type="submit" class="btn btn-danger btn-sm">Leave Table</button>
+        </form>
+        {% endif %}
+    </div>
+
+    <ul class="members-list">
+        {% for m in members %}
+        <li class="member-item">
+            <div class="member-info">
+                <span>{{ m.user.username }}</span>
+                <span class="role-badge role-{{ m.role }}">{{ m.role }}</span>
+                {% if not m.can_view_notes and m.role != 'dm' %}
+                <span class="access-denied">🚫 no notes access</span>
+                {% elif m.role != 'dm' %}
+                <span class="access-granted">📜 can view notes</span>
+                {% endif %}
+            </div>
+
+            {% if is_owner and m.user_id != current_user.id %}
+            <div class="btn-group">
+                <form method="POST" action="{{ url_for('tables.toggle_notes_access', table_id=table.id, member_id=m.id) }}">
+                    <button type="submit" class="btn btn-outline btn-sm">
+                        {{ '🚫 Revoke' if m.can_view_notes else '✅ Grant' }} Notes
+                    </button>
+                </form>
+                <form method="POST" action="{{ url_for('tables.kick_member', table_id=table.id, member_id=m.id) }}"
+                      onsubmit="return confirm('Kick {{ m.user.username }}?')">
+                    <button type="submit" class="btn btn-danger btn-sm">Kick</button>
+                </form>
+            </div>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+
+<!-- Notes Section -->
+<div style="margin-top: 1.5rem;">
+    <div class="section-header">
+        <h2>📝 Notes</h2>
+        {% if membership.can_view_notes %}
+        <a href="{{ url_for('notes.create', table_id=table.id) }}" class="btn btn-primary btn-sm">+ New Note</a>
+        {% endif %}
+    </div>
+
+    {% if not membership.can_view_notes %}
+    <div class="empty-state">
+        <div class="icon">🔒</div>
+        <p>You don't have permission to view notes in this table.</p>
+    </div>
+    {% elif notes %}
+    <div class="notes-grid">
+        {% for note in notes %}
+        <a href="{{ url_for('notes.view', table_id=table.id, note_id=note.id) }}"
+           class="note-card"
+           style="background: {{ note.bg_color }}; color: {{ note.text_color }}; font-size: {{ note.font_size }}px;">
+            <h3 style="font-size: {{ [note.font_size + 2, 24] | min }}px;">{{ note.title }}</h3>
+            <div class="note-preview">{{ note.content[:120] }}{% if note.content|length > 120 %}...{% endif %}</div>
+            <div class="note-meta">
+                By {{ note.author.username }} · {{ note.updated_at.strftime('%b %d, %Y') }}
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="icon">📜</div>
+        <p>No notes yet. Create the first one!</p>
+    </div>
+    {% endif %}
+</div>
+
+{% if is_owner %}
+<div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+    <form method="POST" action="{{ url_for('tables.delete', table_id=table.id) }}"
+          onsubmit="return confirm('DELETE this table and all its notes? This cannot be undone!')">
+        <button type="submit" class="btn btn-danger btn-sm">🗑️ Delete Table</button>
+    </form>
+</div>
+{% endif %}
+{% endblock %}

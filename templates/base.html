@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Quest Log{% endblock %} — Quest Log</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="{{ url_for('tables.my_tables') }}" class="nav-brand">⚔️ Quest Log</a>
+        {% if current_user.is_authenticated %}
+        <div class="nav-links">
+            <a href="{{ url_for('tables.my_tables') }}">My Tables</a>
+            <a href="{{ url_for('tables.create') }}">New Table</a>
+            <a href="{{ url_for('tables.join') }}">Join Table</a>
+            <span class="nav-user">🧙 {{ current_user.username }}</span>
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline">Logout</a>
+        </div>
+        {% endif %}
+    </nav>
+
+    <main class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <p>Quest Log — A DnD Campaign Note Taker</p>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

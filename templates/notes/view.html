@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{{ note.title }}{% endblock %}
+
+{% block content %}
+<div class="section-header">
+    <a href="{{ url_for('tables.detail', table_id=table.id) }}" class="btn btn-outline btn-sm">← Back to {{ table.name }}</a>
+</div>
+
+<div class="note-view" style="background: {{ note.bg_color }}; color: {{ note.text_color }}; font-size: {{ note.font_size }}px;">
+    <h1 style="font-size: {{ [note.font_size + 8, 36] | max }}px;">{{ note.title }}</h1>
+
+    <p style="font-size: 0.8rem; opacity: 0.6; margin-bottom: 1.5rem;">
+        By {{ note.author.username }}
+        · Created {{ note.created_at.strftime('%b %d, %Y at %H:%M') }}
+        {% if note.updated_at != note.created_at %}
+        · Updated {{ note.updated_at.strftime('%b %d, %Y at %H:%M') }}
+        {% endif %}
+    </p>
+
+    <div class="note-content">
+        {{ rendered_content | safe }}
+    </div>
+
+    <div class="note-actions">
+        <a href="{{ url_for('notes.edit', table_id=table.id, note_id=note.id) }}" class="btn btn-primary btn-sm">✏️ Edit</a>
+        <form method="POST" action="{{ url_for('notes.delete', table_id=table.id, note_id=note.id) }}"
+              onsubmit="return confirm('Delete this note?')">
+            <button type="submit" class="btn btn-danger btn-sm">🗑️ Delete</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

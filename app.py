@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from flask import Flask, redirect, url_for
+from flask import Flask, redirect, url_for, request
 from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_bcrypt import Bcrypt
@@ -74,21 +74,8 @@ def create_app():
     app.logger.info("Initializing migrate...")
     migrate.init_app(app, db)
     
-    # Ensure tables exist (fallback for Railway)
-    with app.app_context():
-        try:
-            # Try to query a table to see if schema exists
-            db.session.execute(db.text('SELECT 1 FROM users LIMIT 1'))
-            app.logger.info("Database schema exists")
-        except Exception as e:
-            app.logger.warning(f"Database schema not found: {e}")
-            app.logger.info("Creating all tables...")
-            try:
-                db.create_all()
-                app.logger.info("All tables created successfully")
-            except Exception as create_error:
-                app.logger.error(f"Failed to create tables: {create_error}")
-                raise
+    # DON'T try to connect to DB during startup - let it fail gracefully later
+    app.logger.info("Database initialization deferred until first request")
     
     app.logger.info("Initializing login manager...")
     login_manager.init_app(app)
@@ -118,6 +105,41 @@ def create_app():
     app.register_blueprint(initiative_bp)
     app.logger.info("App creation completed successfully!")
 
+    # Add before_request handler to ensure DB is ready
+    @app.before_request
+    def before_request():
+        # Skip DB init for health checks and static files
+        if request.endpoint in ['health', 'db_health', 'db_init', 'db_tables'] or request.path.startswith('/static'):
+            return
+        
+        # For other routes, try to ensure DB is ready (only once)
+        if not hasattr(app, '_db_checked'):
+            try:
+                ensure_database_ready()
+                app._db_checked = True
+            except Exception as e:
+                app.logger.warning(f"DB initialization failed, but continuing: {e}")
+                app._db_checked = True  # Don't retry on every request
+
+    # Database initialization helper
+    def ensure_database_ready():
+        """Initialize database tables if they don't exist"""
+        try:
+            # Test if tables exist
+            db.session.execute(db.text('SELECT 1 FROM users LIMIT 1'))
+            app.logger.info("Database schema verified")
+            return True
+        except Exception as e:
+            app.logger.warning(f"Database schema not found: {e}")
+            try:
+                app.logger.info("Creating database tables...")
+                db.create_all()
+                app.logger.info("Database tables created successfully")
+                return True
+            except Exception as create_error:
+                app.logger.error(f"Failed to create tables: {create_error}")
+                return False
+
     # --- Root route ---
     @app.route("/")
     def index():
@@ -125,8 +147,7 @@ def create_app():
 
     @app.route("/health")
     def health():
-        app.logger.info("Health check called")
-        return {"status": "ok", "timestamp": datetime.now().isoformat(), "app": "quest-log"}, 200
+        return {"status": "ok", "timestamp": datetime.now().isoformat()}, 200
     
     @app.route("/db-health")
     def db_health():
@@ -139,6 +160,17 @@ def create_app():
         except Exception as e:
             app.logger.error(f"DB Health check failed: {e}")
             return {"status": "error", "database": "disconnected", "error": str(e)}, 503
+
+    @app.route("/db-init")
+    def db_init():
+        """Manually initialize database tables"""
+        try:
+            if ensure_database_ready():
+                return {"status": "ok", "message": "Database initialized"}, 200
+            else:
+                return {"status": "error", "message": "Database initialization failed"}, 500
+        except Exception as e:
+            return {"status": "error", "error": str(e)}, 500
 
     @app.route("/db-tables")
     def db_tables():

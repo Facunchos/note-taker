@@ -9,11 +9,20 @@
 <div class="note-view" style="background: {{ note.bg_color }}; color: {{ note.text_color }}; font-size: {{ note.font_size }}px;">
     <h1 style="font-size: {{ [note.font_size + 8, 36] | max }}px;">{{ note.title }}</h1>
 
+    {% if note.description %}
+    <div class="note-description" style="font-size: {{ note.font_size - 2 }}px; opacity: 0.8; margin-bottom: 1rem; font-style: italic;">
+        {{ note.description }}
+    </div>
+    {% endif %}
+
     <p style="font-size: 0.8rem; opacity: 0.6; margin-bottom: 1.5rem;">
         By {{ note.author.username }}
         · Created {{ note.created_at.strftime('%b %d, %Y at %H:%M') }}
         {% if note.updated_at != note.created_at %}
         · Updated {{ note.updated_at.strftime('%b %d, %Y at %H:%M') }}
+        {% endif %}
+        {% if note.original_note_id %}
+        · <span style="color: var(--accent);">📄 Duplicated from original</span>
         {% endif %}
     </p>
 
@@ -22,11 +31,102 @@
     </div>
 
     <div class="note-actions">
+        {% if can_edit %}
         <a href="{{ url_for('notes.edit', table_id=table.id, note_id=note.id) }}" class="btn btn-primary btn-sm">✏️ Edit</a>
+        {% endif %}
+        
+        <!-- Duplicate Note -->
+        <button onclick="showDuplicateModal()" class="btn btn-outline btn-sm">📄 Duplicate</button>
+        
+        {% if can_manage_permissions %}
+        <a href="{{ url_for('notes.manage_permissions', table_id=table.id, note_id=note.id) }}" class="btn btn-outline btn-sm">🔐 Permissions</a>
+        {% endif %}
+        
+        {% if can_edit %}
         <form method="POST" action="{{ url_for('notes.delete', table_id=table.id, note_id=note.id) }}"
-              onsubmit="return confirm('Delete this note?')">
+              onsubmit="return confirm('Delete this note?')" style="display: inline;">
             <button type="submit" class="btn btn-danger btn-sm">🗑️ Delete</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Duplicate Modal -->
+<div id="duplicateModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <h3>📄 Duplicate Note</h3>
+        <form method="POST" action="{{ url_for('notes.duplicate', table_id=table.id, note_id=note.id) }}">
+            <div class="form-group">
+                <label for="new_title">New Title</label>
+                <input type="text" id="new_title" name="new_title" class="form-control"
+                       value="{{ note.title }} (Copy)" required>
+            </div>
+            <div class="modal-actions">
+                <button type="submit" class="btn btn-primary">Create Duplicate</button>
+                <button type="button" onclick="hideDuplicateModal()" class="btn btn-outline">Cancel</button>
+            </div>
         </form>
     </div>
 </div>
+
+<style>
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: var(--bg-card);
+    padding: 2rem;
+    border-radius: var(--radius);
+    max-width: 400px;
+    width: 90%;
+    border: 1px solid var(--border);
+}
+
+.modal-content h3 {
+    margin-bottom: 1rem;
+    color: var(--accent);
+}
+
+.modal-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+</style>
+
+<script>
+function showDuplicateModal() {
+    document.getElementById('duplicateModal').style.display = 'flex';
+    document.getElementById('new_title').focus();
+    document.getElementById('new_title').select();
+}
+
+function hideDuplicateModal() {
+    document.getElementById('duplicateModal').style.display = 'none';
+}
+
+// Close modal on ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        hideDuplicateModal();
+    }
+});
+
+// Close modal on background click
+document.getElementById('duplicateModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        hideDuplicateModal();
+    }
+});
+</script>
 {% endblock %}

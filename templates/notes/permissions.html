@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}Manage Permissions - {{ note.title }}{% endblock %}
+
+{% block content %}
+<div class="section-header">
+    <div>
+        <h1>🔐 Manage Permissions</h1>
+        <p style="color: var(--text-muted);">{{ note.title }}</p>
+    </div>
+    <a href="{{ url_for('notes.view', table_id=table.id, note_id=note.id) }}" class="btn btn-outline btn-sm">← Back to Note</a>
+</div>
+
+<div class="card">
+    <h3>📝 Note Details</h3>
+    <p><strong>Title:</strong> {{ note.title }}</p>
+    {% if note.description %}
+    <p><strong>Description:</strong> {{ note.description }}</p>
+    {% endif %}
+    <p><strong>Author:</strong> {{ note.author.username }}</p>
+    <p><strong>Created:</strong> {{ note.created_at.strftime('%b %d, %Y at %H:%M') }}</p>
+</div>
+
+<div class="card">
+    <h3>👥 Member Permissions</h3>
+    <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+        Configure individual access for each table member. Members without specific permissions will use default table access.
+    </p>
+
+    {% for member in members %}
+    {% if member.user_id != note.author_id %}
+    <div class="member-permission-item">
+        <div class="member-info">
+            <span class="member-name">{{ member.user.username }}</span>
+            <span class="role-badge role-{{ member.role }}">{{ member.role }}</span>
+        </div>
+
+        {% set permission = permissions.get(member.user_id) %}
+        {% set default_access = member.can_view_notes %}
+        
+        <form method="POST" class="permission-form">
+            <input type="hidden" name="user_id" value="{{ member.user_id }}">
+            
+            <div class="permission-toggles">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="can_view" 
+                           {% if permission %}
+                               {{ 'checked' if permission.can_view }}
+                           {% else %}
+                               {{ 'checked' if default_access }}
+                           {% endif %}>
+                    <span>👁️ Can View</span>
+                </label>
+                
+                <label class="checkbox-label">
+                    <input type="checkbox" name="can_edit"
+                           {% if permission %}
+                               {{ 'checked' if permission.can_edit }}
+                           {% else %}
+                               {{ 'checked' if default_access }}
+                           {% endif %}>
+                    <span>✏️ Can Edit</span>
+                </label>
+            </div>
+
+            <div class="permission-actions">
+                <button type="submit" class="btn btn-primary btn-sm">Update</button>
+                {% if permission %}
+                <a href="{{ url_for('notes.delete_permission', table_id=table.id, note_id=note.id, user_id=member.user_id) }}"
+                   class="btn btn-outline btn-sm"
+                   onclick="event.preventDefault(); if(confirm('Remove custom permission and revert to default?')) { 
+                       var form = document.createElement('form'); 
+                       form.method = 'POST'; 
+                       form.action = this.href; 
+                       document.body.appendChild(form); 
+                       form.submit(); 
+                   }">Reset to Default</a>
+                {% endif %}
+            </div>
+        </form>
+
+        <div class="current-status">
+            {% if permission %}
+            <small style="color: var(--info);">
+                Custom: {{ '✅ View' if permission.can_view else '❌ View' }} 
+                · {{ '✅ Edit' if permission.can_edit else '❌ Edit' }}
+            </small>
+            {% else %}
+            <small style="color: var(--text-muted);">
+                Default: {{ '✅ View & Edit' if default_access else '❌ No Access' }}
+            </small>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+
+    {% if note.author_id == current_user.id %}
+    <div class="member-permission-item author-item">
+        <div class="member-info">
+            <span class="member-name">{{ note.author.username }} (You)</span>
+            <span class="role-badge" style="background: var(--accent); color: #111;">Author</span>
+        </div>
+        <div class="permission-status">
+            <small style="color: var(--success);">✅ Full Access (Cannot be changed)</small>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.member-permission-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.member-permission-item:last-child {
+    border-bottom: none;
+}
+
+.member-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.member-name {
+    font-weight: 600;
+    min-width: 120px;
+}
+
+.permission-form {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.permission-toggles {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+    margin: 0;
+}
+
+.permission-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.current-status {
+    width: 100%;
+    margin-top: 0.5rem;
+}
+
+.author-item {
+    background: rgba(201, 168, 76, 0.1);
+    padding: 1rem;
+    border-radius: var(--radius);
+    border: none;
+    margin-top: 1rem;
+}
+
+.permission-status {
+    display: flex;
+    align-items: center;
+}
+
+@media (max-width: 768px) {
+    .member-permission-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .permission-form {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+</style>
+{% endblock %}

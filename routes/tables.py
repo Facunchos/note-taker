@@ -112,17 +112,15 @@ def detail(table_id):
         .all()
     )
 
-    # Only show notes if user has permission
-    if membership.can_view_notes:
-        notes = table.notes
-    else:
-        notes = []
+    # Get all notes and filter by permissions
+    all_notes = table.notes
+    visible_notes = [note for note in all_notes if note.user_can_view(current_user)]
 
     return render_template(
         "tables/detail.html",
         table=table,
         members=members,
-        notes=notes,
+        notes=visible_notes,
         membership=membership,
         is_owner=table.is_owner(current_user),
     )
